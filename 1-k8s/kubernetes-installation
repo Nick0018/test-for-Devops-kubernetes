@@ -1,0 +1,88 @@
+# Install Docker CE
+## Set up the repository
+### Install required packages.
+yum install yum-utils device-mapper-persistent-data lvm2
+
+### Add Docker repository.
+yum-config-manager \
+  --add-repo \
+  https://download.docker.com/linux/centos/docker-ce.repo
+
+## Install Docker CE.
+yum update && yum install docker-ce-18.06.2.ce
+
+## Create /etc/docker directory.
+mkdir /etc/docker
+
+# Setup daemon.
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+
+mkdir -p /etc/systemd/system/docker.service.d
+
+# Restart Docker
+systemctl daemon-reload
+systemctl start docker
+systemctl enable docker
+
+Install Kubernetes
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+# Set SELinux in permissive mode (effectively disabling it)
+setenforce 0
+sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+
+systemctl enable --now kubelet
+
+Install CRI-O
+# Setup required sysctl params, these persist across reboots.
+cat > /etc/sysctl.d/99-kubernetes-cri.conf <<EOF
+net.bridge.bridge-nf-call-iptables  = 1
+net.ipv4.ip_forward                 = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+
+# Install prerequisites
+yum-config-manager --add-repo=https://cbs.centos.org/repos/paas7-crio-311-candidate/x86_64/os/
+
+# Install CRI-O
+yum install --nogpgcheck cri-o
+
+Then, On the first control plane node, create a configuration file called kubeadm-config.yaml:
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: stable
+controlPlaneEndpoint: "10.128.0.47:6443"
+
+sudo kubeadm init --config=kubeadm-config.yaml --upload-certs
+You can now join any number of the control-plane node running the following command on each as root:
+
+  kubeadm join 10.128.0.47:6443 --token 9mhqth.eog5c866ws386hvq \
+    --discovery-token-ca-cert-hash sha256:1dccb0092292e879874f8f3936a833f59f00051460a85ecfe95c8474dc27f68b \
+    --control-plane --certificate-key f3023f973f0d322fae593eec589e5cd3c35945720484b24e202dac7c9ea00e74
+    
+  kubeadm join 10.128.0.47:6443 --token 9mhqth.eog5c866ws386hvq \
+    --discovery-token-ca-cert-hash sha256:1dccb0092292e879874f8f3936a833f59f00051460a85ecfe95c8474dc27f68b 
+    
+kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml
