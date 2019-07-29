@@ -1,0 +1,3 @@
+Create a file called monitoring-namespace.yaml, appyl and test the namespace exists.
+kubectl apply -f monitoring-namespace.yaml
+kubectl get namespace

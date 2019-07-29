@@ -1,0 +1,8 @@
+1. First we need to update our local helm chart repo.
+$ helm repo update
+2. Next, deploy Prometheus into the monitoring namespace.
+$ helm install -f values.yaml stable/prometheus \
+    --namespace monitoring \
+    --name prometheus
+3. We can confirm by checking that the pods are running:
+$ kubectl get pods -n monitoring

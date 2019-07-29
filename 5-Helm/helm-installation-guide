@@ -1,0 +1,15 @@
+1. Create a file called service-account.yaml, then apply and test that the service account exists in the cluster.
+$ kubectl apply -f service-account.yaml
+$ kubectl get serviceaccounts -n kube-system
+2. Create a file called helm/role-binding.yaml in the 5-Helm folder, apply and test that the role binding exists on the cluster
+$ kubectl apply -f role-binding.yaml
+$ kubectl get clusterrolebindings.rbac.authorization.k8s.io
+3. Install helm from Script.
+$ sudo curl -LO https://git.io/get_helm.sh
+$ sudo chmod 700 get_helm.sh
+su - root
+#./get_helm.sh
+4. Deploy Tiller
+$ helm init --service-account tiller --wait
+5. Apply and test tiller is deployed and running
+ $ kubectl get pods -n kube-system
