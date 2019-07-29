@@ -1,4 +1,4 @@
-te 6 VMs and 1 LoadBalancer in GCE. 
+create 6 VMs and 1 LoadBalancer in GCE. 
 3 kubernetes master node
 Private IP    	Public IP 
 10.128.0.48   	35.222.36.249 
@@ -13,3 +13,5 @@ Private IP    	Public IP
 
 LoadBalancer just for internal network. 
 IP 10.128.0.47
+
+Add firewall rule to allow the related port can be accessed.
